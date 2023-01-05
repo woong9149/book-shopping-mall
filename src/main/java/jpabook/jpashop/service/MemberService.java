@@ -2,20 +2,25 @@ package jpabook.jpashop.service;
 
 import jpabook.jpashop.domain.Member;
 import jpabook.jpashop.repository.MemberRepository;
+import lombok.RequiredArgsConstructor;
 import org.hibernate.boot.model.naming.IllegalIdentifierException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Service
+@Transactional(readOnly = true)
+@RequiredArgsConstructor // final이 붙은 변수의 생성자를 만들어줌
 public class MemberService {
-    @Autowired
-    private MemberRepository memberRepository;
+
+    private final MemberRepository memberRepository;
 
     /**
      *  회원 가입
      */
+    @Transactional
     public Long join(Member member) {
         validateDuplicateMember(member); //중복 회원 검증
         memberRepository.save(member);
