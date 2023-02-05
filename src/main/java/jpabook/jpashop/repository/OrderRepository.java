@@ -1,8 +1,11 @@
 package jpabook.jpashop.repository;
 
-import jpabook.jpashop.domain.Member;
+import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.jpa.impl.JPAQueryFactory;
+import jpabook.jpashop.domain.*;
 import jpabook.jpashop.domain.Order;
 import lombok.RequiredArgsConstructor;
+import org.aspectj.weaver.ast.Or;
 import org.springframework.stereotype.Repository;
 import org.springframework.util.StringUtils;
 
@@ -26,15 +29,15 @@ public class OrderRepository {
         return em.find(Order.class, id);
     }
 
-    public List<Order> findAll(OrderSearch orderSearch) {
-        return em.createQuery("SELECT o FROM Order o JOIN o.member m" +
-                        " WHERE o.status = :status " +
-                        " AND m.name like :name",Order.class)
-                .setParameter("status", orderSearch.getOrderStatus())
-                .setParameter("name", orderSearch.getMemberName())
-                .setMaxResults(1000) //최대 1000건
-                .getResultList();
-    }
+//    public List<Order> findAll(OrderSearch orderSearch) {
+//        return em.createQuery("SELECT o FROM Order o JOIN o.member m" +
+//                        " WHERE o.status = :status " +
+//                        " AND m.name like :name",Order.class)
+//                .setParameter("status", orderSearch.getOrderStatus())
+//                .setParameter("name", orderSearch.getMemberName())
+//                .setMaxResults(1000) //최대 1000건
+//                .getResultList();
+//    }
 
     /**
      * JPQL
@@ -107,6 +110,27 @@ public class OrderRepository {
         TypedQuery<Order> query = em.createQuery(cq).setMaxResults(1000);
 
         return query.getResultList();
+    }
+
+    public List<Order> findAll(OrderSearch orderSearch) {
+        JPAQueryFactory query = new JPAQueryFactory(em);
+        QOrder order = QOrder.order;
+        QMember member = QMember.member;
+
+        return query
+                .select(order)
+                .from(order)
+                .join(order.member, member)
+                .where(statusEq(orderSearch.getOrderStatus()))
+                .limit(1000)
+                .fetch();
+    }
+
+    private BooleanExpression statusEq(OrderStatus statusCond) {
+        if (statusCond == null) {
+            return null;
+        }
+        return QOrder.order.status.eq(statusCond);
     }
 
     public List<Order> findAllWithMemberDelivery() {
